@@ -1,31 +1,67 @@
-import { StyleSheet } from 'react-native';
-
-import EditScreenInfo from '../../components/EditScreenInfo';
-import { Text, View } from '../../components/Themed';
+import type { Variables } from "gqty";
+import {
+  Suspense,
+  useDeferredValue,
+  useState,
+  type FunctionComponent,
+} from "react";
+import { StyleSheet, TextInput } from "react-native";
+import { Text, View } from "~/components/Themed";
+import { useQuery, type Query } from "~/lib/gqty";
 
 export default function TabOneScreen() {
+  const [name, setName] = useState<string>();
+  const deferredName = useDeferredValue(name);
+
+  console.debug(`render`, Date.now(), typeof WeakMap);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      <View style={{ marginBottom: 10, width: 300 }}>
+        <TextInput
+          style={{ borderStyle: "solid", borderWidth: 1 }}
+          onChangeText={(text) => {
+            setName(text);
+          }}
+        />
+      </View>
+
+      <Suspense fallback={<Text>Loading...</Text>}>
+        <Characters filter={{ name: deferredName }} />
+      </Suspense>
     </View>
   );
 }
 
+const Characters: FunctionComponent<
+  NonNullable<Variables<Query["characters"]>>
+> = ({ filter, page }) => {
+  const query = useQuery({ suspense: true });
+
+  return (
+    <View style={{ width: 300 }}>
+      {query.characters({ filter, page })?.results?.map((character) => (
+        <Text key={character?.id ?? 0}>
+          {character?.id}. {character?.name}
+        </Text>
+      ))}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   separator: {
     marginVertical: 30,
     height: 1,
-    width: '80%',
+    width: "80%",
   },
 });
